@@ -16,6 +16,16 @@ const supabase = createClient(STX_SUPABASE_URL, STX_SUPABASE_PUBLISHABLE_KEY, {
 });
 window.STX_SUPABASE = supabase;
 
+// Keep other open tabs from continuing to show a signed-in workspace after logout.
+supabase.auth.onAuthStateChange((event) => {
+  if (event === "SIGNED_OUT") {
+    localStorage.removeItem("stx_active_session");
+    if (typeof window.showPage === "function") window.showPage("loginPage");
+    if (typeof window.renderSavedAccounts === "function") window.renderSavedAccounts();
+    if (typeof window.autoFillLastAccount === "function") window.autoFillLastAccount();
+  }
+});
+
 const $ = (id) => document.getElementById(id);
 const readAccounts = () => {
   try { return JSON.parse(localStorage.getItem("stx_database_accounts") || "{}") || {}; }
@@ -212,6 +222,8 @@ window.addEventListener("load", async () => {
     }
   } catch (error) {
     console.error("STX Supabase session restore:", error);
+    localStorage.removeItem("stx_active_session");
+    if (typeof window.showPage === "function") window.showPage("loginPage");
     if (typeof window.showToast === "function") window.showToast("Tidak dapat memulihkan sesi. Periksa koneksi internet.");
   }
 });
