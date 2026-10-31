@@ -2482,7 +2482,7 @@ function updateMotivation() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  localStorage.removeItem("stx_active_session");
+  // Supabase Auth restores the persisted session; do not clear it during startup.
   if(window.STX_MIGRATE_V2) STX_MIGRATE_V2(stxLegacyBarcode());
   updateMotivation();
 });
@@ -2550,7 +2550,7 @@ window.addEventListener("load", () => {
     setTimeout(() => splash.style.display = "none", 400);
   }, 7000);
   
-  localStorage.removeItem("stx_active_session");
+  // Supabase Auth restores the persisted session; do not clear it during startup.
   showPage("loginPage");
   renderSavedAccounts();
   autoFillLastAccount();
@@ -5097,5 +5097,6 @@ async function stxInstallApp() {
   stxDeferredInstall = null; stxToggleInstallUi(false);
 }
 </script>
+<script type="module" src="supabase-auth.js"></script>
 </body>
 </html>
