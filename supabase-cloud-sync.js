@@ -147,14 +147,19 @@ if (supabase) {
     }, 1800);
   }
 
+  function belongsToActiveWorkspace(key) {
+    const value = String(key);
+    const email = activeEmail().toLowerCase();
+    return value.startsWith("stx_") || (!!email && value.startsWith(scopedPrefix(email)));
+  }
   Storage.prototype.setItem = function (key, value) {
     const result = nativeSetItem.call(this, key, value);
-    if (this === localStorage && (String(key).startsWith("stx_")) && activeUserId && !restoring) scheduleSync();
+    if (this === localStorage && belongsToActiveWorkspace(key) && activeUserId && !restoring) scheduleSync();
     return result;
   };
   Storage.prototype.removeItem = function (key) {
     const result = nativeRemoveItem.call(this, key);
-    if (this === localStorage && String(key).startsWith("stx_") && activeUserId && !restoring) scheduleSync();
+    if (this === localStorage && belongsToActiveWorkspace(key) && activeUserId && !restoring) scheduleSync();
     return result;
   };
 
