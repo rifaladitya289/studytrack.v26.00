@@ -115,10 +115,6 @@ if (supabase) {
         showStatus("Data STX berhasil dipulihkan dari cloud.");
       } else if (remote && lastSync && Date.parse(remote.updated_at) > Date.parse(lastSync) && dirty) {
         showStatus("Ada perubahan STX dari perangkat lain. Data lokal dipertahankan; sinkronisasi otomatis dijeda agar tidak menimpa data.");
-      } else if (remote && !lastSync && localHasData) {
-        // Two populated copies with no shared sync marker: never overwrite either copy automatically.
-        window.STX_CLOUD_SYNC_STATUS = { userId: uid, conflict: true, reason: "local-and-cloud-both-have-data" };
-        showStatus("Data lokal dan cloud sama-sama berisi. Keduanya dipertahankan; sinkronisasi otomatis dijeda untuk mencegah data tertimpa.");
       } else if (remote && lastSync && Date.parse(remote.updated_at) > Date.parse(lastSync) && !dirty) {
         restoreSnapshot(uid, email, remote.payload, remote.updated_at);
         if (typeof window.renderAllData === "function") window.renderAllData();
