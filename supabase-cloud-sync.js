@@ -67,7 +67,11 @@ if (supabase) {
     try {
       const accounts = accountStore();
       const current = accounts[email] || {};
-      accounts[email] = { ...payload.account, ...current, email };
+      const localPhoto = current.profilePhoto || "";
+      const localBarcode = current.barcodeImage || "";
+      accounts[email] = { ...current, ...payload.account, email };
+      if (localPhoto) accounts[email].profilePhoto = localPhoto;
+      if (localBarcode) accounts[email].barcodeImage = localBarcode;
       delete accounts[email].password;
       // Keep images already stored on this device; cloud image storage is a separate phase.
       writeAccountStore(accounts);
@@ -137,8 +141,7 @@ if (supabase) {
     localStorage.setItem(marker(activeUserId, "dirty"), "1");
     clearTimeout(syncTimer);
     syncTimer = setTimeout(() => {
-      const { data } = supabase.auth.getSession();
-      Promise.resolve(data).then(() => supabase.auth.getUser()).then(({ data: result, error }) => {
+      supabase.auth.getUser().then(({ data: result, error }) => {
         if (!error && result?.user) return syncActiveUser(result.user);
       }).catch((error) => console.error("STX scheduled sync:", error));
     }, 1800);
@@ -156,6 +159,14 @@ if (supabase) {
   };
 
   // Supabase callbacks stay synchronous; the actual network work is queued separately.
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      supabase.auth.getUser().then(({ data, error }) => {
+        if (!error && data?.user) syncActiveUser(data.user);
+      }).catch((error) => console.error("STX initial cloud sync:", error));
+    }, 1400);
+  });
+
   supabase.auth.onAuthStateChange((event, session) => {
     if (session?.user) {
       const uid = session.user.id;
