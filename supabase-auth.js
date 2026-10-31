@@ -76,6 +76,8 @@ function enterApp(user, metadata) {
   if (typeof window.STX_INIT_USER_WORKSPACE === "function") {
     window.STX_INIT_USER_WORKSPACE(email, wasLegacyAccount);
   }
+  accounts[email].workspaceInitialized = true;
+  writeAccounts(accounts);
   if (typeof window.renderAllData === "function") window.renderAllData();
   if (typeof window.switchTab === "function") window.switchTab("beranda");
   if (!existed && typeof window.showToast === "function") window.showToast("Akun STX siap digunakan. Data belajar dimulai dari kosong.");
