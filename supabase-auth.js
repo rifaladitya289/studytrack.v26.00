@@ -137,8 +137,8 @@ window.handleAuthSubmit = async function (event) {
   if (!email || !password) { authMessage("Email dan password wajib diisi.", "emailError"); return; }
   if (registering && !name) { authMessage("Nama lengkap wajib diisi!", "nameError"); return; }
   if (registering && !className) { authMessage("Kelas wajib diisi!", "classError"); return; }
-  if (registering && accounts[email]) { authMessage("Email sudah tercatat di perangkat ini. Gunakan menu masuk untuk migrasi akun lama.", "emailError"); return; }
-
+  // A local legacy account is not the same as a Supabase Auth account.
+  // Allow registration so its existing local workspace can be linked after email verification.
   setBusy(true);
   try {
     let user = null;
@@ -154,7 +154,9 @@ window.handleAuthSubmit = async function (event) {
       if (error) throw error;
       if (!data.session || !data.user) {
         clearAuthFields();
-        if (typeof window.showToast === "function") window.showToast("Registrasi diterima. Periksa email untuk verifikasi, lalu masuk kembali.");
+        if (typeof window.showToast === "function") window.showToast(accounts[email]
+          ? "Registrasi diterima. Data lama di perangkat akan dipertahankan dan ditautkan setelah email diverifikasi. Periksa email, lalu masuk kembali."
+          : "Registrasi diterima. Periksa email untuk verifikasi, lalu masuk kembali.");
         if (typeof window.toggleAuthMode === "function") window.toggleAuthMode();
         return;
       }
