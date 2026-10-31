@@ -39,6 +39,7 @@ function makeLocalAccount(user, existing, metadata) {
   const meta = user?.user_metadata || metadata || {};
   const name = existing?.namaAsli || meta.display_name || meta.full_name || meta.name || "";
   const account = {
+    ...(existing || {}),
     namaAsli: name,
     namaSamaran: existing?.namaSamaran || name,
     email: user.email || existing?.email || "",
@@ -60,7 +61,8 @@ function makeLocalAccount(user, existing, metadata) {
     hasSeenTutorial: existing?.hasSeenTutorial ?? false,
     workspaceInitialized: existing?.workspaceInitialized === true
   };
-  // Intentionally do not copy the legacy plaintext password.
+  // Preserve any additional legacy account fields, but never retain a plaintext password.
+  delete account.password;
   return account;
 }
 function enterApp(user, metadata) {
