@@ -109,6 +109,7 @@ async function migrateLegacyAccount(email, password, oldAccount) {
     email,
     password,
     options: {
+      emailRedirectTo: window.location.origin + window.location.pathname,
       data: {
         display_name: oldAccount.namaAsli || oldAccount.namaSamaran || "",
         class_name: oldAccount.kelas || "",
@@ -145,7 +146,10 @@ window.handleAuthSubmit = async function (event) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { display_name: name, class_name: className, organization } }
+        options: {
+          emailRedirectTo: window.location.origin + window.location.pathname,
+          data: { display_name: name, class_name: className, organization }
+        }
       });
       if (error) throw error;
       if (!data.session || !data.user) {
