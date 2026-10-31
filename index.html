@@ -2567,13 +2567,10 @@ window.addEventListener("load", () => {
 function autoFillLastAccount() {
   const accounts = JSON.parse(localStorage.getItem("stx_database_accounts")) || {};
   const emails = Object.keys(accounts);
-  if (emails.length > 0) {
-    const lastEmail = emails[emails.length - 1];
-    document.getElementById("authEmailInput").value = lastEmail;
-    document.getElementById("authPasswordInput").value = accounts[lastEmail].password;
-  }
+  if (emails.length > 0) document.getElementById("authEmailInput").value = emails[emails.length - 1];
+  const password = document.getElementById("authPasswordInput");
+  if (password) password.value = "";
 }
-
 function mintaIzinNotifikasi() {
   if (!("Notification" in window)) { showToast("Browser tidak mendukung notifikasi"); return; }
   Notification.requestPermission().then(permission => {
@@ -2997,59 +2994,12 @@ function toggleAuthMode() {
   clearErrors(); renderSavedAccounts();
 }
 
+// Safe fallback: Supabase Auth module replaces this handler when it loads.
 function handleAuthSubmit(e) {
-  e.preventDefault(); clearErrors();
-  const email = document.getElementById("authEmailInput").value.trim().toLowerCase();
-  const password = document.getElementById("authPasswordInput").value;
-  const name = document.getElementById("regNameInput").value.trim();
-  const className = (document.getElementById("regClassInput")?.value || "").trim();
-  const organization = (document.getElementById("regOrgInput")?.value || "").trim();
-  let accounts = JSON.parse(localStorage.getItem("stx_database_accounts")) || {};
-
-  if(isRegisterMode) {
-    if(!name) { document.getElementById("nameError").textContent = "Nama lengkap wajib diisi!"; document.getElementById("nameError").style.display = "block"; return; }
-    if(!className) { const el=document.getElementById("classError"); if(el){el.textContent="Kelas wajib diisi!";el.style.display="block";} return; }
-    if(accounts[email]) { document.getElementById("emailError").textContent = "Email sudah terdaftar!"; document.getElementById("emailError").style.display = "block"; return; }
-
-    // Akun BARU selalu dibuat dengan data pribadi yang benar-benar baru/kosong.
-    accounts[email] = {
-      namaAsli: name, namaSamaran: name, email: email, password: password,
-      bio: "", tempatLahir: "", tanggalLahir: "",
-      jenisKelamin: "", jurusan: "PPLG", kelas: className,
-      sekolah: "SMKN 1 Ciamis", organisasi: organization, profilePhoto: "",
-      barcodeImage: "", attendance: [], coins: 0, unlockedBorders: ['default'],
-      equippedBorder: 'default', claimedWelcomeReward: false, hasSeenTutorial: false,
-      workspaceInitialized: true
-    };
-    localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
-    showToast("Registrasi berhasil! Data akun baru dibuat kosong.");
-    toggleAuthMode();
-  } else {
-    if(!accounts[email]) { document.getElementById("emailError").textContent = "Email belum terdaftar!"; document.getElementById("emailError").style.display = "block"; return; }
-    if(accounts[email].password !== password) { document.getElementById("passwordError").textContent = "Password salah!"; document.getElementById("passwordError").style.display = "block"; return; }
-
-    // Akun lama: pertahankan data account object dan migrasikan data localStorage lama
-    // hanya untuk akun lama pertama yang login setelah sistem pemisahan diaktifkan.
-    const wasLegacyAccount = accounts[email].workspaceInitialized !== true;
-    if(accounts[email].kelas === undefined) accounts[email].kelas = "";
-    if(accounts[email].organisasi === undefined) accounts[email].organisasi = "";
-    if(!Array.isArray(accounts[email].attendance)) accounts[email].attendance = [];
-    if(accounts[email].barcodeImage === undefined) accounts[email].barcodeImage = "";
-    accounts[email].workspaceInitialized = true;
-    localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
-    localStorage.setItem("stx_active_session", email);
-    if(window.STX_INIT_USER_WORKSPACE) STX_INIT_USER_WORKSPACE(email, wasLegacyAccount);
-
-    renderAllData();
-    switchTab('beranda');
-
-    if(!accounts[email].hasSeenTutorial) {
-      document.getElementById("tutorialModal").classList.add("active");
-      accounts[email].hasSeenTutorial = true;
-      localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
-    }
-    showToast("Berhasil Masuk!");
-  }
+  e.preventDefault();
+  const password = document.getElementById("authPasswordInput");
+  if(password) password.value = "";
+  showToast("Login belum siap. Periksa koneksi internet lalu muat ulang aplikasi.");
 }
 function closeTutorialModal() { document.getElementById("tutorialModal").classList.remove("active"); }
 
@@ -3069,15 +3019,11 @@ function renderSavedAccounts() {
     </div>`;
   }).join('');
 }
-function selectQuickAccount(email, password) {
-  if(password === undefined) {
-    const accounts = JSON.parse(localStorage.getItem("stx_database_accounts")) || {};
-    password = accounts[email] ? accounts[email].password : "";
-  }
+function selectQuickAccount(email) {
   document.getElementById("authEmailInput").value = email;
-  document.getElementById("authPasswordInput").value = password;
+  document.getElementById("authPasswordInput").value = "";
   clearErrors();
-  showToast("Auto-Fill berhasil diterapkan!");
+  showToast("Email akun dipilih. Masukkan password untuk melanjutkan.");
 }
 function getCurrentUserData() {
   const active = localStorage.getItem("stx_active_session");
