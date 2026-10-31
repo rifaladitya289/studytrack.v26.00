@@ -1,8 +1,8 @@
 /* Service worker STX: aplikasi tetap bisa dibuka tanpa internet.
    HTML selalu diambil dari jaringan lebih dulu (supaya update langsung terpakai),
    dan memakai salinan tersimpan kalau offline. */
-const CACHE = "stx-v1";
-const ASSETS = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png", "favicon-32.png"];
+const CACHE = "stx-v2-auth";
+const ASSETS = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png", "favicon-32.png", "supabase-auth.js"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
