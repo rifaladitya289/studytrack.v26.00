@@ -13,7 +13,7 @@ grant select, insert, update on table public.user_state to authenticated;
 
 drop policy if exists "user_state_select_own" on public.user_state;
 create policy "user_state_select_own" on public.user_state
-  for select to authenticated using ((select auth.uid()));
+  for select to authenticated using ((select auth.uid()) = user_id);
 
 drop policy if exists "user_state_insert_own" on public.user_state;
 create policy "user_state_insert_own" on public.user_state
