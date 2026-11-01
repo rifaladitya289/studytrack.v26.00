@@ -42,8 +42,8 @@ function authMessage(message, field) {
   else if (typeof window.showToast === "function") window.showToast(message);
 }
 function setBusy(busy) {
-  const btn = $("authSubmitBtn");
-  if (btn) { btn.disabled = busy; btn.textContent = busy ? "Memproses..." : (isRegisterScreen() ? "Daftar Sekarang →" : "Masuk →"); }
+  const btn = $("googleLoginBtn");
+  if (btn) { btn.disabled = busy; btn.style.opacity = busy ? "0.7" : "1"; btn.textContent = busy ? "Menghubungkan Google..." : "Lanjutkan dengan Google"; }
 }
 function makeLocalAccount(user, existing, metadata) {
   const meta = user?.user_metadata || metadata || {};
@@ -123,6 +123,27 @@ async function migrateLegacyAccount(email, password, oldAccount) {
   }
   return data.user;
 }
+
+window.signInWithGoogle = async function () {
+  const button = $("googleLoginBtn");
+  const errorBox = $("googleLoginError");
+  if (button) { button.disabled = true; button.textContent = "Menghubungkan Google..."; }
+  if (errorBox) { errorBox.textContent = ""; errorBox.style.display = "none"; }
+  try {
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo, queryParams: { prompt: "select_account" } }
+    });
+    if (error) throw error;
+  } catch (error) {
+    const message = String(error?.message || "Login Google gagal dimulai.");
+    if (errorBox) { errorBox.textContent = message; errorBox.style.display = "block"; }
+    else if (typeof window.showToast === "function") window.showToast(message);
+    if (button) { button.disabled = false; button.textContent = "Lanjutkan dengan Google"; }
+  }
+};
+
 window.handleAuthSubmit = async function (event) {
   event.preventDefault();
   if (typeof window.clearErrors === "function") window.clearErrors();
