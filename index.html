@@ -1325,17 +1325,38 @@ body.light-mode .tg-ic{background:#fff;border-color:#e4e8ed}
     
     <div class="security-badge">
       <span>🛡</span>
-      <div id="loginSecurityText"><strong>Privasi Aman:</strong> Akun dikelola aman oleh Supabase Auth. Data belajar lama tetap tersimpan di perangkat.</div>
+      <div id="loginSecurityText"><strong>Privasi Aman:</strong> Data terenkripsi lokal di perangkat Anda.</div>
     </div>
 
-    <div id="googleLoginInfo" style="margin:18px 0 14px;padding:12px;border-radius:14px;background:rgba(59,130,246,.10);border:1px solid rgba(144,202,249,.25);font-size:12px;line-height:1.6;color:#dbeafe;">
-      Masuk aman menggunakan akun Google. Gunakan alamat Google yang sama dengan akun STX lama agar data lokal pada perangkat ini tetap tersambung.
+    <div id="savedAccountsSection" class="saved-accounts-section" style="display:none;">
+      <div class="saved-accounts-title" id="lblSavedAcc">Akun Tersimpan (Ketuk Auto-Fill Instan)</div>
+      <div class="saved-accounts-grid" id="savedAccountsGrid"></div>
     </div>
-    <button type="button" id="googleLoginBtn" onclick="signInWithGoogle()" style="display:flex;align-items:center;justify-content:center;gap:12px;width:100%;margin:18px 0 8px;padding:14px 18px;border:1px solid rgba(255,255,255,.22);border-radius:12px;background:#fff;color:#202124;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.16);">
-      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.76 7.18l7.73 6C44.42 37.95 46.98 31.86 46.98 24.55z"/><path fill="#FBBC05" d="M10.54 28.59A14.4 14.4 0 0 1 9.75 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A23.9 23.9 0 0 0 0 24c0 3.87.93 7.53 2.56 10.78l7.98-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.91-5.8l-7.73-6c-2.14 1.44-4.89 2.3-8.18 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-      Lanjutkan dengan Google
-    </button>
-    <div id="googleLoginError" class="error-msg" role="alert" style="display:none;margin-top:10px;"></div>
+
+    <form id="authForm" onsubmit="handleAuthSubmit(event)">
+      <div id="registerNameField" style="display:none;">
+        <input type="text" id="regNameInput" placeholder="Nama Lengkap (Pengguna)" oninput="clearErrors()">
+        <div id="nameError" class="error-msg"></div>
+        <input type="text" id="regClassInput" placeholder="Kelas (contoh: X-PPLG)" oninput="clearErrors()">
+        <div id="classError" class="error-msg"></div>
+        <input type="text" id="regOrgInput" placeholder="Organisasi / Ekstrakurikuler (opsional)" oninput="clearErrors()">
+      </div>
+      
+      <input type="email" id="authEmailInput" placeholder="Email (contoh: siswa@smkn1ciamis.sch.id)" required oninput="clearErrors()">
+      <div id="emailError" class="error-msg">Email salah atau belum terdaftar</div>
+
+      <div style="position: relative; width: 100%; margin-top: 6px;">
+        <input type="password" id="authPasswordInput" placeholder="Password" required style="margin:0; padding-right:40px;" oninput="clearErrors()">
+        <button type="button" onclick="togglePasswordVisibility()" id="eyeBtn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 16px;">👁</button>
+      </div>
+      <div id="passwordError" class="error-msg">Password salah</div>
+
+      <button type="submit" class="main-btn" id="authSubmitBtn" style="margin-top: 15px;">Masuk →</button>
+    </form>
+
+    <div style="margin-top: 15px; font-size: 12px; cursor: pointer;" onclick="toggleAuthMode()">
+      <span id="authSwitchPrompt">Belum punya akun?</span> <span id="authSwitchLabel" style="color:#90caf9; font-weight:bold; text-decoration:underline;">Daftar di sini</span>
+    </div>
     <button type="button" id="installLoginBtn" onclick="stxInstallApp()" style="display:none;margin:16px auto 0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#90caf9;border-radius:12px;padding:10px 16px;font-size:12px;font-weight:700;cursor:pointer;">📲 Instal Aplikasi STX</button>
     <div style="margin-top: 20px; font-size: 11px; opacity: 0.6;">© 2026 SMKN 1 Ciamis</div>
   </div>
@@ -2461,7 +2482,7 @@ function updateMotivation() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  // Supabase Auth restores the persisted session; do not clear it during startup.
+  localStorage.removeItem("stx_active_session");
   if(window.STX_MIGRATE_V2) STX_MIGRATE_V2(stxLegacyBarcode());
   updateMotivation();
 });
@@ -2529,7 +2550,7 @@ window.addEventListener("load", () => {
     setTimeout(() => splash.style.display = "none", 400);
   }, 7000);
   
-  // Supabase Auth restores the persisted session; do not clear it during startup.
+  localStorage.removeItem("stx_active_session");
   showPage("loginPage");
   renderSavedAccounts();
   autoFillLastAccount();
@@ -2546,10 +2567,13 @@ window.addEventListener("load", () => {
 function autoFillLastAccount() {
   const accounts = JSON.parse(localStorage.getItem("stx_database_accounts")) || {};
   const emails = Object.keys(accounts);
-  if (emails.length > 0) document.getElementById("authEmailInput").value = emails[emails.length - 1];
-  const password = document.getElementById("authPasswordInput");
-  if (password) password.value = "";
+  if (emails.length > 0) {
+    const lastEmail = emails[emails.length - 1];
+    document.getElementById("authEmailInput").value = lastEmail;
+    document.getElementById("authPasswordInput").value = accounts[lastEmail].password;
+  }
 }
+
 function mintaIzinNotifikasi() {
   if (!("Notification" in window)) { showToast("Browser tidak mendukung notifikasi"); return; }
   Notification.requestPermission().then(permission => {
@@ -2973,12 +2997,59 @@ function toggleAuthMode() {
   clearErrors(); renderSavedAccounts();
 }
 
-// Safe fallback: Supabase Auth module replaces this handler when it loads.
 function handleAuthSubmit(e) {
-  e.preventDefault();
-  const password = document.getElementById("authPasswordInput");
-  if(password) password.value = "";
-  showToast("Login belum siap. Periksa koneksi internet lalu muat ulang aplikasi.");
+  e.preventDefault(); clearErrors();
+  const email = document.getElementById("authEmailInput").value.trim().toLowerCase();
+  const password = document.getElementById("authPasswordInput").value;
+  const name = document.getElementById("regNameInput").value.trim();
+  const className = (document.getElementById("regClassInput")?.value || "").trim();
+  const organization = (document.getElementById("regOrgInput")?.value || "").trim();
+  let accounts = JSON.parse(localStorage.getItem("stx_database_accounts")) || {};
+
+  if(isRegisterMode) {
+    if(!name) { document.getElementById("nameError").textContent = "Nama lengkap wajib diisi!"; document.getElementById("nameError").style.display = "block"; return; }
+    if(!className) { const el=document.getElementById("classError"); if(el){el.textContent="Kelas wajib diisi!";el.style.display="block";} return; }
+    if(accounts[email]) { document.getElementById("emailError").textContent = "Email sudah terdaftar!"; document.getElementById("emailError").style.display = "block"; return; }
+
+    // Akun BARU selalu dibuat dengan data pribadi yang benar-benar baru/kosong.
+    accounts[email] = {
+      namaAsli: name, namaSamaran: name, email: email, password: password,
+      bio: "", tempatLahir: "", tanggalLahir: "",
+      jenisKelamin: "", jurusan: "PPLG", kelas: className,
+      sekolah: "SMKN 1 Ciamis", organisasi: organization, profilePhoto: "",
+      barcodeImage: "", attendance: [], coins: 0, unlockedBorders: ['default'],
+      equippedBorder: 'default', claimedWelcomeReward: false, hasSeenTutorial: false,
+      workspaceInitialized: true
+    };
+    localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
+    showToast("Registrasi berhasil! Data akun baru dibuat kosong.");
+    toggleAuthMode();
+  } else {
+    if(!accounts[email]) { document.getElementById("emailError").textContent = "Email belum terdaftar!"; document.getElementById("emailError").style.display = "block"; return; }
+    if(accounts[email].password !== password) { document.getElementById("passwordError").textContent = "Password salah!"; document.getElementById("passwordError").style.display = "block"; return; }
+
+    // Akun lama: pertahankan data account object dan migrasikan data localStorage lama
+    // hanya untuk akun lama pertama yang login setelah sistem pemisahan diaktifkan.
+    const wasLegacyAccount = accounts[email].workspaceInitialized !== true;
+    if(accounts[email].kelas === undefined) accounts[email].kelas = "";
+    if(accounts[email].organisasi === undefined) accounts[email].organisasi = "";
+    if(!Array.isArray(accounts[email].attendance)) accounts[email].attendance = [];
+    if(accounts[email].barcodeImage === undefined) accounts[email].barcodeImage = "";
+    accounts[email].workspaceInitialized = true;
+    localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
+    localStorage.setItem("stx_active_session", email);
+    if(window.STX_INIT_USER_WORKSPACE) STX_INIT_USER_WORKSPACE(email, wasLegacyAccount);
+
+    renderAllData();
+    switchTab('beranda');
+
+    if(!accounts[email].hasSeenTutorial) {
+      document.getElementById("tutorialModal").classList.add("active");
+      accounts[email].hasSeenTutorial = true;
+      localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
+    }
+    showToast("Berhasil Masuk!");
+  }
 }
 function closeTutorialModal() { document.getElementById("tutorialModal").classList.remove("active"); }
 
@@ -2998,11 +3069,15 @@ function renderSavedAccounts() {
     </div>`;
   }).join('');
 }
-function selectQuickAccount(email) {
+function selectQuickAccount(email, password) {
+  if(password === undefined) {
+    const accounts = JSON.parse(localStorage.getItem("stx_database_accounts")) || {};
+    password = accounts[email] ? accounts[email].password : "";
+  }
   document.getElementById("authEmailInput").value = email;
-  document.getElementById("authPasswordInput").value = "";
+  document.getElementById("authPasswordInput").value = password;
   clearErrors();
-  showToast("Email akun dipilih. Masukkan password untuk melanjutkan.");
+  showToast("Auto-Fill berhasil diterapkan!");
 }
 function getCurrentUserData() {
   const active = localStorage.getItem("stx_active_session");
@@ -5022,7 +5097,5 @@ async function stxInstallApp() {
   stxDeferredInstall = null; stxToggleInstallUi(false);
 }
 </script>
-<script type="module" src="supabase-auth.js?v=stx6"></script>
-<script type="module" src="supabase-cloud-sync.js?v=stx6"></script>
 </body>
 </html>
