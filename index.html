@@ -2482,7 +2482,6 @@ function updateMotivation() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-  localStorage.removeItem("stx_active_session");
   if(window.STX_MIGRATE_V2) STX_MIGRATE_V2(stxLegacyBarcode());
   updateMotivation();
 });
@@ -2550,10 +2549,12 @@ window.addEventListener("load", () => {
     setTimeout(() => splash.style.display = "none", 400);
   }, 7000);
   
-  localStorage.removeItem("stx_active_session");
-  showPage("loginPage");
-  renderSavedAccounts();
-  autoFillLastAccount();
+  const restored = stxRestoreLocalSession();
+  if (!restored) {
+    showPage("loginPage");
+    renderSavedAccounts();
+    autoFillLastAccount();
+  }
 
   initDraggableWidget();
 
@@ -2568,9 +2569,38 @@ function autoFillLastAccount() {
   const accounts = JSON.parse(localStorage.getItem("stx_database_accounts")) || {};
   const emails = Object.keys(accounts);
   if (emails.length > 0) {
-    const lastEmail = emails[emails.length - 1];
-    document.getElementById("authEmailInput").value = lastEmail;
-    document.getElementById("authPasswordInput").value = accounts[lastEmail].password;
+    const lastEmail = localStorage.getItem("stx_last_account") || emails[emails.length - 1];
+    if (accounts[lastEmail]) {
+      document.getElementById("authEmailInput").value = lastEmail;
+      document.getElementById("authPasswordInput").value = accounts[lastEmail].password || "";
+    }
+  }
+}
+
+// Pulihkan sesi lokal agar pengguna tidak perlu login setiap kali membuka STX.
+// Logout eksplisit tetap dihormati dan akan meminta login pada pembukaan berikutnya.
+function stxRestoreLocalSession() {
+  try {
+    if (localStorage.getItem("stx_explicit_logout") === "1") {
+      localStorage.removeItem("stx_active_session");
+      return false;
+    }
+    const accounts = JSON.parse(localStorage.getItem("stx_database_accounts") || "{}");
+    const emails = Object.keys(accounts);
+    if (!emails.length) return false;
+    let email = localStorage.getItem("stx_active_session") || localStorage.getItem("stx_last_account") || emails[emails.length - 1];
+    if (!accounts[email]) email = emails[emails.length - 1];
+    if (!email || !accounts[email]) return false;
+    localStorage.setItem("stx_active_session", email);
+    localStorage.setItem("stx_last_account", email);
+    if (window.STX_INIT_USER_WORKSPACE) STX_INIT_USER_WORKSPACE(email, accounts[email].workspaceInitialized !== true);
+    renderAllData();
+    showPage("tabBeranda");
+    switchTab("beranda");
+    return true;
+  } catch (err) {
+    console.warn("STX local session restore failed:", err);
+    return false;
   }
 }
 
@@ -3022,8 +3052,16 @@ function handleAuthSubmit(e) {
       workspaceInitialized: true
     };
     localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
-    showToast("Registrasi berhasil! Data akun baru dibuat kosong.");
-    toggleAuthMode();
+    localStorage.setItem("stx_active_session", email);
+    localStorage.setItem("stx_last_account", email);
+    localStorage.removeItem("stx_explicit_logout");
+    if (window.STX_INIT_USER_WORKSPACE) STX_INIT_USER_WORKSPACE(email, true);
+    renderAllData();
+    switchTab("beranda");
+    accounts[email].hasSeenTutorial = true;
+    localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
+    showToast("Registrasi berhasil! Selamat datang di StudyTrack X.");
+    if (document.getElementById("tutorialModal")) document.getElementById("tutorialModal").classList.add("active");
   } else {
     if(!accounts[email]) { document.getElementById("emailError").textContent = "Email belum terdaftar!"; document.getElementById("emailError").style.display = "block"; return; }
     if(accounts[email].password !== password) { document.getElementById("passwordError").textContent = "Password salah!"; document.getElementById("passwordError").style.display = "block"; return; }
@@ -3038,6 +3076,8 @@ function handleAuthSubmit(e) {
     accounts[email].workspaceInitialized = true;
     localStorage.setItem("stx_database_accounts", JSON.stringify(accounts));
     localStorage.setItem("stx_active_session", email);
+    localStorage.setItem("stx_last_account", email);
+    localStorage.removeItem("stx_explicit_logout");
     if(window.STX_INIT_USER_WORKSPACE) STX_INIT_USER_WORKSPACE(email, wasLegacyAccount);
 
     renderAllData();
@@ -3358,7 +3398,13 @@ function toggleProfileDetails() {
 }
 
 function logoutSession() {
-  closeDrawer(); localStorage.removeItem("stx_active_session"); showPage("loginPage"); renderSavedAccounts(); autoFillLastAccount(); showToast("Keluar sesi berhasil.");
+  closeDrawer();
+  localStorage.removeItem("stx_active_session");
+  localStorage.setItem("stx_explicit_logout", "1");
+  showPage("loginPage");
+  renderSavedAccounts();
+  autoFillLastAccount();
+  showToast("Keluar sesi berhasil.");
 }
 
 function renderAllData() {
