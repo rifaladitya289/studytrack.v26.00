@@ -1,8 +1,8 @@
 {
-  "name": "StudyTrack X - SMKN 1 Ciamis",
+  "name": "StudyTrack X",
   "short_name": "STX",
   "id": "./",
-  "description": "Sistem progres pembelajaran SMKN 1 Ciamis: jadwal, materi, tugas, kuis, dan Student Wallet.",
+  "description": "Sistem progres pembelajaran: jadwal, materi, tugas, kuis, dan Student Wallet.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
